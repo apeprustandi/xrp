@@ -3,7 +3,8 @@ const fs = require('fs');
 const readlineSync = require("readline-sync");
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
-const rotatorProxyUrl = ''; //isi dengan proxy kamu
+// const rotatorProxyUrl = 'http://duniakedol-rotate:ApRi191099@p.webshare.io:80/';//kartun
+const rotatorProxyUrl = 'http://aucmstty-rotate:tb8v847c7zib@p.webshare.io:80/'; //apepdewa
 
 const countdownAndWithdraw = async () => {
   const printCountdown = remainingTime => {
@@ -18,6 +19,15 @@ const countdownAndWithdraw = async () => {
     }
   }, 1000); // Update setiap 1 detik
   await new Promise(resolve => setTimeout(resolve, remainingTime * 1000)); // menunggu sampai hitung mundur selesai
+};
+
+const bacaFile = (fileAkun) => {
+  if (!fs.existsSync(fileAkun)) {
+    console.log(`File ${fileAkun} tidak ditemukan.`);
+    fs.writeFileSync(fileAkun, JSON.stringify([]));
+    console.log(`File ${fileAkun} telah dibuat.`);
+    console.clear()
+  }
 };
 
 const fakeIpIndonesia = () => {
@@ -260,7 +270,7 @@ const withdraw = (myCookie, userAgent, wallet, tag) => {
                 console.log(`Gagal Login ${email}`);
               }
             } catch (error) {
-              console.log(`Nent..`);
+              console.log(`Nextt..`);
           }
         }        
         await countdownAndWithdraw();
@@ -277,39 +287,55 @@ const withdraw = (myCookie, userAgent, wallet, tag) => {
       const namaLengkap = dataFake.nama;
       const username = dataFake.username;
       const email = dataFake.email;
-      
+
+      await bacaFile('NewAkun.json')
       const totalAkun = await fs.promises.readFile('NewAkun.json', 'utf8');
       const panjang = JSON.parse(totalAkun).length;
+  
       console.log(`Total     : ${panjang} Akun`)
       console.log(`Username  : ${username}`)
       console.log(`Email     : ${email}`)
       
       const daftarAkun = await register(userAgent, namaLengkap, username, email);
+      
       if (daftarAkun.message === 'ok') {
-        console.log(`Register  : Sukses`)
-        const suksesAccount = {
-          username,
-          email,
-          userAgent,
-          tag: "tagKos",
-          wallet: "rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg"
-        };
-        const existingData = await fs.promises.readFile(`NewAkun.json`, 'utf-8').catch(() => "[]");
-        let parsedData;
-        try {
-          parsedData = JSON.parse(existingData);
-        } catch (error) {
-          console.error('Error parsing JSON data:', error);
-          parsedData = [];
+        const loginAkun = await login(userAgent, email); //kuki
+        if (loginAkun.data.code == 1) {
+          console.log(`Status    : Register Sukses`)
+          const myCookie1 = loginAkun.setCookieHeader;
+          const myCookieGet = myCookie1.split('user=')[1].split(';')[0]; // Perbaikan pada split
+          
+          const myCookie = myCookieGet
+          const wallet = 'kosong';
+          const tag = 'tagKOS';
+  
+          const suksesAccount = {
+            akun:panjang,
+            email,
+            myCookie,
+            wallet,
+            tag,
+            userAgent,
+          };
+  
+          const existingData = await fs.promises.readFile(`NewAkun.json`, 'utf-8').catch(() => "[]");
+          let parsedData;
+          try {
+            parsedData = JSON.parse(existingData);
+          } catch (error) {
+            console.error('Error parsing JSON data:', error);
+            parsedData = [];
+          }
+          parsedData.push(suksesAccount);
+          const suksesJSON = JSON.stringify(parsedData, null, 2);
+          await fs.promises.writeFile(`NewAkun.json`, suksesJSON).catch(err => console.error('Error writing to file:', err));
+          console.log(" ")
+        }else{
+          console.log(`Status    : Register Gagal`)
         }
-        parsedData.push(suksesAccount);
-        const suksesJSON = JSON.stringify(parsedData, null, 2);
-        await fs.promises.writeFile(`NewAkun.json`, suksesJSON).catch(err => console.error('Error writing to file:', err));
-      } else {
-        console.log(`Register  : Gagal`)
       }
-      console.log(" ")
     }
   }
+
 })();
 
