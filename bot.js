@@ -3,8 +3,7 @@ const fs = require('fs');
 const readlineSync = require("readline-sync");
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
-// const rotatorProxyUrl = 'http://duniakedol-rotate:ApRi191099@p.webshare.io:80/';//kartun
-const rotatorProxyUrl = 'http://aucmstty-rotate:tb8v847c7zib@p.webshare.io:80/'; //apepdewa
+const rotatorProxyUrl = ''; //isi dengan proxy kamu
 
 const countdownAndWithdraw = async () => {
   const printCountdown = remainingTime => {
