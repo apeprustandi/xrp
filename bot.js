@@ -3,31 +3,29 @@ const fs = require('fs');
 const readlineSync = require("readline-sync");
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
-const rotatorProxyUrl = ''; //proxy anda
+const rotatorProxyUrls = [
+  'http://duniakedol-rotate:ApRi191099@p.webshare.io:80/',
+  'http://duniakedol2-rotate:ApRi191099@p.webshare.io:80/'
+];
 
-const countdownAndWithdraw = async () => {
-  const printCountdown = remainingTime => {
-    process.stdout.write(`${Math.floor(remainingTime / 60)} menit ${remainingTime % 60} detik\r`);
-  };
-  let remainingTime = 5; //dalam detik
-  const intervalId = setInterval(async () => {
-    remainingTime--;
-    printCountdown(remainingTime);
-    if (remainingTime === 0) {
-      clearInterval(intervalId);
+function acakUrlProxy(array) {
+  const indeksAcak = Math.floor(Math.random() * array.length);
+  return array[indeksAcak];
+}
+
+const hapusFile = async (filePath) => {
+  if (fs.existsSync(filePath)) {
+    // Menghapus file jika ada
+    try {
+        fs.unlinkSync(filePath);
+        console.log(`File ${filePath} berhasil dihapus.`);
+    } catch (err) {
+        console.error(`Gagal menghapus file ${filePath}: ${err}`);
     }
-  }, 1000); // Update setiap 1 detik
-  await new Promise(resolve => setTimeout(resolve, remainingTime * 1000)); // menunggu sampai hitung mundur selesai
-};
-
-const bacaFile = (fileAkun) => {
-  if (!fs.existsSync(fileAkun)) {
-    console.log(`File ${fileAkun} tidak ditemukan.`);
-    fs.writeFileSync(fileAkun, JSON.stringify([]));
-    console.log(`File ${fileAkun} telah dibuat.`);
-    console.clear()
+  } else {
+    console.log(`File ${filePath} tidak ditemukan.`);
   }
-};
+}
 
 const fakeIpIndonesia = () => {
   const firstOctet = Math.floor(Math.random() * 256);
@@ -63,32 +61,63 @@ const apiFaker = async () => {
   });
 };
 
-const register = (userAgent, namaLengkap, username, email) => {
+const bikinFile = async (noAkun, email, myCookie, wallet, tag, userAgent, namaFile) => {
+  const suksesAccount = {
+    akun:noAkun,
+    email,
+    myCookie,
+    wallet,
+    tag,
+    userAgent,
+  };
+  
+  const existingData = await fs.promises.readFile(namaFile, 'utf-8').catch(() => "[]");
+  let parsedData;
+  try {
+    parsedData = JSON.parse(existingData);
+  } catch (error) {
+    console.error('Error parsing JSON data:', error);
+    parsedData = [];
+  }
+  parsedData.push(suksesAccount);
+  const suksesJSON = JSON.stringify(parsedData, null, 2);
+  await fs.promises.writeFile(namaFile, suksesJSON).catch(err => console.error('Error writing to file:', err));
+}  
+
+
+const countdownAndWithdraw = async () => {
+  const printCountdown = remainingTime => {
+    process.stdout.write(`${Math.floor(remainingTime / 60)} menit ${remainingTime % 60} detik\r`);
+  };
+  let remainingTime = 130; //dalam detik
+  const intervalId = setInterval(async () => {
+    remainingTime--;
+    printCountdown(remainingTime);
+    if (remainingTime === 0) {
+      clearInterval(intervalId);
+    }
+  }, 1000); // Update setiap 1 detik
+  await new Promise(resolve => setTimeout(resolve, remainingTime * 1000)); // menunggu sampai hitung mundur selesai
+};
+
+
+const register = (myCookie, userAgent, email, username, rotatorProxyUrl) => {
   return new Promise((resolve, reject) => {
-    fetch('https://xrpearning.com/api.php?act=register', {
+    fetch('https://www.xrphash.com/api.php?act=register', {
       method: 'POST',
       headers: {
-        'authority': 'xrpearning.com',
-        'accept': '*/*',
-        'accept-language': 'en-US,en;q=0.9',
-        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'cookie': 'loclang=en',
-        'origin': 'https://xrpearning.com',
-        'referer': 'https://xrpearning.com/register.php',
-        'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-        'sec-ch-ua-mobile': '?1',
-        'sec-ch-ua-platform': '"Android"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'user-agent': userAgent,
-        'x-requested-with': 'XMLHttpRequest'
+        'cookie': myCookie,
+        'content-type': 'text/plain;charset=UTF-8',
+        'user-agent': userAgent
       },
-      body: new URLSearchParams({
-        'fullname': namaLengkap,
-        'username': username,
-        'email': email,
-        'password': 'ApRi191099'
+      body: JSON.stringify({
+        act: "register", // Mengonfirmasi penarikan
+        email: email,
+        username: username,
+        phone: 85788776599,
+        password: "ApRi191099",
+        password_repeat: "ApRi191099",
+        dialCode:"62"
       }),
       agent: new HttpsProxyAgent(rotatorProxyUrl)
     })
@@ -107,39 +136,30 @@ const register = (userAgent, namaLengkap, username, email) => {
   });
 };
 
-const login = (userAgent, email) => {
+const getCookie = (userAgent) => {
   return new Promise((resolve, reject) => {
-    fetch('https://xrpearning.com/api.php?act=login', {
-      method: 'POST',
+    fetch('https://www.xrphash.com/', {
       headers: {
-        'authority': 'xrpearning.com',
-        'accept': '*/*',
+        'authority': 'www.xrphash.com',
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'accept-language': 'en-US,en;q=0.9',
-        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'cookie': 'loclang=en',
-        'origin': 'https://xrpearning.com',
-        'referer': 'https://xrpearning.com/login.php',
         'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
         'sec-ch-ua-mobile': '?0',
         'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'user-agent': userAgent,
-        'x-requested-with': 'XMLHttpRequest'
-      },
-      body: new URLSearchParams({
-        'email': email,
-        'password': 'ApRi191099'
-      }),
-      agent: new HttpsProxyAgent(rotatorProxyUrl)
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': userAgent
+      }
     })
     .then((res) => {
       if (!res.ok) {
         throw new Error('Network response was not ok');
       }
       const setCookieHeader = res.headers.get('Set-Cookie');
-      return res.json().then((data) => {
+      return res.text().then((data) => {
         resolve({ data, setCookieHeader });
       });
     })
@@ -149,30 +169,18 @@ const login = (userAgent, email) => {
   });
 };
 
-
-const withdraw = (myCookie, userAgent, wallet, tag) => {
+const wihdraw = (myCookie, userAgent, wallet, tag, rotatorProxyUrl) => {
   return new Promise((resolve, reject) => {
-    fetch("https://xrpearning.com/api.php?act=withdraw", {
+    fetch('https://www.xrphash.com/api.php?act=withdraw', {
       method: 'POST',
       headers: {
-        'authority': 'xrpearning.com',
-        'accept': 'application/json, text/javascript, */*; q=0.01',
-        'accept-language': 'en-US,en;q=0.9',
         'content-type': 'application/json',
-        'cookie': `loclang=en; login=1; user=${myCookie}; godomain=xrpearning.com; _gid=GA1.2.388133387.1710398895; area=; _ga_YYYLT9KHHC=GS1.1.1710401108.2.0.1710401108.0.0.0; _ga=GA1.1.1298969868.1710398895`,
-        'origin': 'https://xrpearning.com',
-        'referer': 'https://xrpearning.com/cashout.php',
-        'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
+        'cookie': myCookie,
         'user-agent': userAgent,
         'x-requested-with': 'XMLHttpRequest'
       },
       body: JSON.stringify({
-        confirm: 1, // Mengonfirmasi penarikan
+        confirm: 0, // Mengonfirmasi penarikan
         payout_value: 0.000025,
         password: 'ApRi191099',
         xrpAddr: wallet,
@@ -195,7 +203,36 @@ const withdraw = (myCookie, userAgent, wallet, tag) => {
   });
 };
 
-
+const login = (myCookie, userAgent, email) => {
+  return new Promise((resolve, reject) => {
+    fetch('https://www.xrphash.com/api.php?act=login', {
+      method: 'POST',
+      headers: {
+        'content-type': 'text/plain;charset=UTF-8',
+        'cookie': myCookie,
+        'user-agent': userAgent
+      },
+      body: JSON.stringify({
+        act: "login",
+        email: email,
+        password: "ApRi191099",
+        otp: null
+      })
+    })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return res.json();
+    })
+    .then((res) => {
+      resolve(res);
+    })
+    .catch((err) => {
+      reject(err);
+    });
+  });
+};
 
 
 (async () => {
@@ -203,138 +240,116 @@ const withdraw = (myCookie, userAgent, wallet, tag) => {
   let type;
   while (true) {
     console.log("Pilih Menu");
-    console.log("1. Withdraw");
-    console.log("2. Register");
+    console.log("[1] Register");
+    console.log("[2] Withdraw");
 
     const choice = readlineSync.questionInt('Masukkan pilihan Anda: ');
+    console.log('')
     
     if (choice === 1) {
-      type = 'wd';
-      break;
-    } else if (choice === 2) {
       type = 'reg';
       break;
+    } else if (choice === 2) {
+      type = 'wd';
+      break;
     }
   }
 
-  
-  if (type === 'wd') {
-    const selectFile = readlineSync.question('File Akun: ');
-    console.log(" ")
-  
-    const fileAkun = `${selectFile}.json`
+  if(type == 'reg'){
+    while(true){
+      const totalAkun = await fs.promises.readFile(`akun.json`, 'utf8');
+      const dataAkun = JSON.parse(totalAkun);
+      const bacaWalet = await fs.promises.readFile(`wallete.json`, 'utf8');
+      const walletJSON = JSON.parse(bacaWalet);
+        try {
+          if(dataAkun.length > 100){
+            console.log('Rakus Mex...')
+            console.log('Akun lebih dari 100')
+            process.exit(0)
+          }
+          const rotatorProxyUrl = await acakUrlProxy(rotatorProxyUrls)
+          const dataFake = await apiFaker();
+          const userAgent = dataFake.browser.user_agent;
+          const username = dataFake.username;
+          const email = dataFake.email;
+          const wallet = walletJSON[dataAkun.length].alamat
+          const tag = walletJSON[dataAkun.length].tag
+          const noAkun = dataAkun.length;        
+          console.log(`No        : ${noAkun}`);
+          console.log(`Email     : ${email}`);
+          console.log(`Wallete   : ${wallet}`);
+          console.log(`Tag       : ${tag}`);
+
+          const getCok = await getCookie()
+          const myCookie = getCok.setCookieHeader.split(' ')[0]
+    
+          const hasil = await register(myCookie, userAgent, email, username, rotatorProxyUrl)
+          if(hasil.parameters[0].includes('/login.php')){
+
+            console.log(`Daftar    : Berhasil`);
+            await bikinFile(noAkun, email, myCookie, wallet, tag, userAgent, 'akun.json')
+          }else if(hasil.parameters[0].includes('username')){
+            console.log(`Daftar    : Sudah digunakan`);
+          }else{
+            //ulang
+            console.log(`Daftar    : ${hasil.parameters[0]}`);
+          }
+          console.log(" ")
+        } catch (error) {
+          console.log(error)
+        }
+    }
+  }
+
+  if(type == 'wd'){
+    const fileAkun = `akun.json`
     if (!fs.existsSync(fileAkun)) {
       console.log(`File ${fileAkun} tidak ditemukan.`);
-      console.clear()
+      process.exit(0)
+    }else{
+      const totalAkun = await fs.promises.readFile(fileAkun, 'utf8');
+      const dataAkun = JSON.parse(totalAkun);
+      console.log(`Total     : ${dataAkun.length} Akun`);
     }
-    try {
-      let countdownCompleted = false;
-      while (!countdownCompleted) {
-        const totalAkun = await fs.promises.readFile(`${selectFile}.json`, 'utf8');
-        const dataAkun = JSON.parse(totalAkun);
-        console.log(`Total     : ${dataAkun.length} Akun`);
-        console.log(" ");
-  
-        for (const user of dataAkun) {            
-          try {
-              const userAgent = user.userAgent;
-              const email = user.email;
-              const wallet = user.wallet;
-              const tag = user.tag;
-              const noAkun = user.akun;
-              
-              if (userAgent !== undefined) {
-                  const myCookie = user.myCookie
-                  console.log(`Akun      : ${noAkun}`);
-                  console.log(`Email     : ${email}`);
-                  
-                  const withrawAkun = await withdraw(myCookie, userAgent, wallet, tag);
-                  if (!withrawAkun) continue;
-                  if(withrawAkun.code === 2){
-                    if(withrawAkun.message === 'Incorrect destination tag'){
-                      console.log(`Withdraw  : Tag/IP Error`);
-                    }else{
-                      console.log(`Withdraw  : 0.000037 XRP`);
-                    }
-                  }
-                  if (withrawAkun.code === 1){
-                    if(withrawAkun.message === 'Incorrect destination tag'){
-                      console.log(`Withdraw  : Tag/IP Error`);
-                    }else{
-                      console.log(`Withdraw  : Belum 5 Menit`);
-                    }
-                  }
-                  console.log("");
-              } else {
-                console.log(`Gagal Login ${email}`);
-              }
-            } catch (error) {
-              console.log(`Nextt..`);
-          }
-        }        
-        await countdownAndWithdraw();
-        countdownCompleted = false; // Setel ke true jika Anda ingin keluar dari loop
-      }
-    } catch (error) {}
-  }
-  
-
-  if (type === 'reg') {
+    console.log('')
+    const mulai1 = readlineSync.questionInt('Mulai akun berapa: ');
+    const stop2 = readlineSync.questionInt('Stop akun berapa: ');
+    
     while(true){
-      const dataFake = await apiFaker();
-      const userAgent = dataFake.browser.user_agent;
-      const namaLengkap = dataFake.nama;
-      const username = dataFake.username;
-      const email = dataFake.email;
-
-      await bacaFile('NewAkun.json')
-      const totalAkun = await fs.promises.readFile('NewAkun.json', 'utf8');
-      const panjang = JSON.parse(totalAkun).length;
-  
-      console.log(`Total     : ${panjang} Akun`)
-      console.log(`Username  : ${username}`)
-      console.log(`Email     : ${email}`)
-      
-      const daftarAkun = await register(userAgent, namaLengkap, username, email);
-      
-      if (daftarAkun.message === 'ok') {
-        const loginAkun = await login(userAgent, email); //kuki
-        if (loginAkun.data.code == 1) {
-          console.log(`Status    : Register Sukses`)
-          const myCookie1 = loginAkun.setCookieHeader;
-          const myCookieGet = myCookie1.split('user=')[1].split(';')[0]; // Perbaikan pada split
-          
-          const myCookie = myCookieGet
-          const wallet = 'kosong';
-          const tag = 'tagKOS';
-  
-          const suksesAccount = {
-            akun:panjang,
-            email,
-            myCookie,
-            wallet,
-            tag,
-            userAgent,
-          };
-  
-          const existingData = await fs.promises.readFile(`NewAkun.json`, 'utf-8').catch(() => "[]");
-          let parsedData;
-          try {
-            parsedData = JSON.parse(existingData);
-          } catch (error) {
-            console.error('Error parsing JSON data:', error);
-            parsedData = [];
+      const totalAkun = await fs.promises.readFile(fileAkun, 'utf8');
+      const dataAkun = JSON.parse(totalAkun);
+      console.log(" ");
+      const mulai = mulai1 -1
+      const stop = stop2
+      for (let i = mulai; i < stop && i < dataAkun.length; i++) {
+        const user = dataAkun[i];
+        try {
+          const rotatorProxyUrl = await acakUrlProxy(rotatorProxyUrls)
+          const userAgent = user.userAgent;
+          const email = user.email;
+          const wallet = user.wallet;
+          const tag = user.tag;
+          const getCok = await getCookie()
+          const myCookie = getCok.setCookieHeader.split(' ')[0]
+    
+          console.log(`Email     : ${email}`);
+          const testLogin = await login(myCookie, userAgent, email)
+          if(testLogin.parameters[2].includes('success')){
+            const hasilWd = await wihdraw(myCookie, userAgent, wallet, tag, rotatorProxyUrl)
+            if(hasilWd.parameters[2].includes('successful')){
+              console.log(`Withdraw  : 0.000025 USD`);
+            }else if(hasilWd.parameters[2].includes('5 minutes')){
+              console.log(`Withdraw  : Belum 5 Menit`);
+            }else{
+              console.log(`Withdraw  : ${hasilWd.parameters[2]}`);
+            }
           }
-          parsedData.push(suksesAccount);
-          const suksesJSON = JSON.stringify(parsedData, null, 2);
-          await fs.promises.writeFile(`NewAkun.json`, suksesJSON).catch(err => console.error('Error writing to file:', err));
-          console.log(" ")
-        }else{
-          console.log(`Status    : Register Gagal`)
+        } catch (error) {
+          console.log(`Error     : ${error}`);
         }
+        console.log(" ")
       }
+      await countdownAndWithdraw();
     }
   }
-
 })();
-
